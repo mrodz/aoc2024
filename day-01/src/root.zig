@@ -12,7 +12,7 @@ pub const LineIterator = struct {
     }
 
     pub fn next(self: *LineIterator) ?[2]u32 {
-        const element  = self.input.get(self.index) orelse return null;
+        const element = self.input.get(self.index) orelse return null;
         self.index += 1;
         return element;
     }
@@ -61,11 +61,11 @@ pub const LineInput = struct {
             right[i] = tuple[1];
         }
 
-        return .{left, right};
+        return .{ left, right };
     }
 };
 
-const InputParseError = error {
+const InputParseError = error{
     LineMissingComponents,
 };
 
@@ -81,12 +81,14 @@ pub fn parseLinesFromFile(file_path: []const u8, allocator: std.mem.Allocator) !
 
     var buffer: [128]u8 = undefined;
 
-    while (try stream.readUntilDelimiterOrEof(&buffer, '\n')) |line| : (buffer = undefined) {
-        errdefer std.log.err("`{s}`", .{ line });
+    while (try stream.readUntilDelimiterOrEof(&buffer, '\n')) |raw_line| : (buffer = undefined) {
+        errdefer std.log.err("`{s}`", .{raw_line});
+
+        const line = if (raw_line[raw_line.len - 1] == '\r') raw_line[0 .. raw_line.len - 1] else raw_line;
 
         var iter = std.mem.splitScalar(u8, line, 32);
         const first_num_s = iter.next() orelse return InputParseError.LineMissingComponents;
-        
+
         const second_num_s = while (iter.next()) |maybe_next| {
             if (maybe_next.len == 0) continue;
             break maybe_next;
@@ -94,6 +96,7 @@ pub fn parseLinesFromFile(file_path: []const u8, allocator: std.mem.Allocator) !
             return InputParseError.LineMissingComponents;
         };
 
+        errdefer std.log.err("`{s}` and `{s}`", .{ first_num_s, second_num_s });
         const first_num = try std.fmt.parseInt(u32, first_num_s, 10);
         const second_num = try std.fmt.parseInt(u32, second_num_s, 10);
 
