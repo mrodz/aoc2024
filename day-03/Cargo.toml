@@ -1,0 +1,9 @@
+[package]
+name = "day-03"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.94"
+pest = "2.7.15"
+pest_derive = "2.7.15"

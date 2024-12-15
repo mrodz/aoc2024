@@ -1,0 +1,15 @@
+mul = { "mul" }
+
+operation = { mul }
+
+lpar = { "(" }
+rpar = { ")" }
+comma = { "," }
+
+number = { ASCII_DIGIT+ }
+
+arguments = { lpar ~ ((number ~ (comma ~ number)+) | number) ~ rpar }
+
+invocation = { operation ~ arguments }
+
+file = { SOI ~ (invocation | ANY)* ~ EOI }
