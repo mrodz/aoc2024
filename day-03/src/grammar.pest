@@ -1,5 +1,7 @@
 mul        = @{ "mul" }
-operation  = ${ mul }
+enable     = @{ "do" }
+disable    = @{ "don't" }
+operation  = ${ mul | disable | enable }
 
 number     = @{ ASCII_DIGIT+ }
 

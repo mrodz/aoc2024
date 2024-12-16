@@ -1,6 +1,6 @@
 use std::{fs::File, io::Read, ops::Deref};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Context as C, Result};
 use pest::{iterators::Pair, Parser};
 use pest_derive::Parser;
 
@@ -49,6 +49,40 @@ impl Deref for Arguments {
 #[derive(Debug)]
 enum Operation {
     Mul,
+    Enable,
+    Disable,
+}
+
+struct Context {
+    count: u64,
+    enabled: bool,
+}
+
+impl Default for Context {
+    fn default() -> Self {
+        Self {
+            count: 0,
+            enabled: true,
+        }
+    }
+}
+
+impl Context {
+    const fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    const fn count(&self) -> u64 {
+        self.count
+    }
+
+    fn enable(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
+
+    fn add(&mut self, count: u64) {
+        self.count += count;
+    }
 }
 
 impl Operation {
@@ -65,6 +99,8 @@ impl Operation {
 
         match ty {
             Rule::mul => Ok(Self::Mul),
+            Rule::enable => Ok(Self::Enable),
+            Rule::disable => Ok(Self::Disable),
             other => bail!("{other:?} is not an operation"),
         }
     }
@@ -72,6 +108,7 @@ impl Operation {
     fn is_valid(&self, arguments: &Arguments) -> bool {
         match self {
             Self::Mul => arguments.len() == 2,
+            Self::Enable | Self::Disable => arguments.len() == 0,
         }
     }
 }
@@ -105,9 +142,15 @@ impl Invocation {
         }))
     }
 
-    fn execute(&self) -> u64 {
+    fn execute(&self, ctx: &mut Context) {
         match self.operation {
-            Operation::Mul => self.arguments.iter().product(),
+            Operation::Mul => {
+                if ctx.is_enabled() {
+                    ctx.add(self.arguments.iter().product())
+                }
+            }
+            Operation::Enable => ctx.enable(true),
+            Operation::Disable => ctx.enable(false),
         }
     }
 }
@@ -118,7 +161,7 @@ fn part_one(input: &str) -> Result<()> {
     let file = root_parse.next().context("file not present")?;
 
     let invocations = file.into_inner();
-    let mut sum = 0;
+    let mut context = Context::default();
 
     for invocation_pair in invocations {
         if invocation_pair.as_rule() != Rule::invocation {
@@ -129,10 +172,10 @@ fn part_one(input: &str) -> Result<()> {
             continue;
         };
 
-        sum += invocation.execute();
+        invocation.execute(&mut context);
     }
 
-    println!("Scan the corrupted memory for uncorrupted mul instructions. What do you get if you add up all of the results of the multiplications? The Answer is {sum}");
+    println!("Scan the corrupted memory for uncorrupted mul instructions. What do you get if you add up all of the results of the multiplications? The Answer is {}", context.count());
 
     Ok(())
 }
