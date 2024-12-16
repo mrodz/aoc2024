@@ -1,15 +1,13 @@
-mul = { "mul" }
+mul        = @{ "mul" }
+operation  = ${ mul }
 
-operation = { mul }
+number     = @{ ASCII_DIGIT+ }
 
-lpar = { "(" }
-rpar = { ")" }
-comma = { "," }
+lpar       = @{ "(" }
+rpar       = @{ ")" }
+comma      = @{ "," }
 
-number = { ASCII_DIGIT+ }
+arguments  = ${ lpar ~ ((number ~ (comma ~ number)+) | number)? ~ rpar }
+invocation = ${ operation ~ arguments }
 
-arguments = { lpar ~ ((number ~ (comma ~ number)+) | number) ~ rpar }
-
-invocation = { operation ~ arguments }
-
-file = { SOI ~ (invocation | ANY)* ~ EOI }
+file       = ${ SOI ~ (invocation | ANY)* ~ EOI }
