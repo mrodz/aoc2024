@@ -56,6 +56,7 @@ enum Operation {
 struct Context {
     count: u64,
     enabled: bool,
+    freeze_enabled: bool,
 }
 
 impl Default for Context {
@@ -63,13 +64,25 @@ impl Default for Context {
         Self {
             count: 0,
             enabled: true,
+            freeze_enabled: true,
         }
     }
 }
 
 impl Context {
+    fn new() -> Self {
+        Self::default()
+    }
+
+    fn new_mutable() -> Self {
+        Self {
+            freeze_enabled: false,
+            ..Default::default()
+        }
+    }
+
     const fn is_enabled(&self) -> bool {
-        self.enabled
+        self.freeze_enabled || self.enabled
     }
 
     const fn count(&self) -> u64 {
@@ -155,13 +168,12 @@ impl Invocation {
     }
 }
 
-fn part_one(input: &str) -> Result<()> {
+fn sum_of_program(input: &str, context: &mut Context) -> Result<()> {
     let mut root_parse = InputParser::parse(Rule::file, input)?;
 
     let file = root_parse.next().context("file not present")?;
 
     let invocations = file.into_inner();
-    let mut context = Context::default();
 
     for invocation_pair in invocations {
         if invocation_pair.as_rule() != Rule::invocation {
@@ -172,11 +184,24 @@ fn part_one(input: &str) -> Result<()> {
             continue;
         };
 
-        invocation.execute(&mut context);
+        invocation.execute(context);
     }
 
-    println!("Scan the corrupted memory for uncorrupted mul instructions. What do you get if you add up all of the results of the multiplications? The Answer is {}", context.count());
 
+    Ok(())
+}
+
+fn part_one(input: &str) -> Result<()> {
+    let mut context = Context::new();
+    sum_of_program(input, &mut context)?;
+    println!("Scan the corrupted memory for uncorrupted mul instructions. What do you get if you add up all of the results of the multiplications? The Answer is {}", context.count());
+    Ok(())
+}
+
+fn part_two(input: &str) -> Result<()> {
+    let mut context = Context::new_mutable();
+    sum_of_program(input, &mut context)?;
+    println!("Handle the new instructions; what do you get if you add up all of the results of just the enabled multiplications? The Answer is {}", context.count());
     Ok(())
 }
 
@@ -190,5 +215,7 @@ fn main() -> Result<()> {
     file.read_to_string(&mut input)?;
 
     part_one(&input)?;
+    part_two(&input)?;
+    
     Ok(())
 }
